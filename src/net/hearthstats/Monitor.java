@@ -56,7 +56,7 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 	protected API _api = new API();
 	protected HearthstoneAnalyzer _analyzer = new HearthstoneAnalyzer();
 	protected ProgramHelper _hsHelper;
-	protected int _pollingIntervalInMs = 50;
+	protected int _pollingIntervalInMs = 100;
 	protected boolean _hearthstoneDetected;
 	protected JGoogleAnalyticsTracker _analytics;
 	protected JEditorPane _logText;
@@ -522,7 +522,7 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 		}
 	}
 
-	protected ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(5);
+	protected ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
 
 	protected boolean _drawPaneAdded = false;
 
@@ -693,8 +693,9 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 			public Object call() throws Exception {
                 pollIteration++;
                 boolean perfFoundProgram;
+                perflog.info("{},PollStart,-,{},{}", new Object[] { System.currentTimeMillis(), pollIteration, 0 });
                 long startTime = System.nanoTime();
-				
+
 				if (_hsHelper.foundProgram(pollIteration)) {
                     perfFoundProgram = true;
 					_handleHearthstoneFound(pollIteration);
@@ -709,7 +710,15 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 
                 long endTime = System.nanoTime();
                 // Absolute Time, Type, Mode, Sequence Number, Event Time,
-                perflog.info("{},Poll,{},{},{}", new Object[] { System.currentTimeMillis(), perfFoundProgram ? "Found" : "NotFound", pollIteration, endTime - startTime });
+                perflog.info("{},PollEnd,-,{},{}", new Object[] { System.currentTimeMillis(), pollIteration, endTime - startTime });
+
+                if (pollIteration % 5 == 0) {
+                    long gcStartTime = System.nanoTime();
+                    System.gc();
+                    long gcEndTime = System.nanoTime();
+                    // Absolute Time, Type, Mode, Sequence Number, Event Time,
+                    perflog.info("{},GC,-,{},{}", new Object[] { System.currentTimeMillis(), pollIteration, gcEndTime - gcStartTime });
+                }
 
                 return "";
 			}
