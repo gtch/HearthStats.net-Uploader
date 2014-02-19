@@ -14,14 +14,14 @@ public abstract class ProgramHelper extends Observable {
      *
      * @return Whether or not the program is found
      */
-    public abstract boolean foundProgram();
+    public abstract boolean foundProgram(int pollIteration);
 
     /**
      * Takes a screenshot of the Hearthstone window.
      *
      * @return An image of the Hearthstone window, or null if not running or not available.
      */
-    public abstract BufferedImage getScreenCapture();
+    public abstract BufferedImage getScreenCapture(int pollIteration);
 
 
     protected void _notifyObserversOfChangeTo(String property) {

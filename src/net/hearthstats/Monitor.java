@@ -45,9 +45,16 @@ import net.miginfocom.swing.MigLayout;
 
 import com.boxysystems.jgoogleanalytics.FocusPoint;
 import com.boxysystems.jgoogleanalytics.JGoogleAnalyticsTracker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("serial")
 public class Monitor extends JFrame implements Observer, WindowListener {
+
+    final Logger log = LoggerFactory.getLogger(Monitor.class);
+    final Logger perflog = LoggerFactory.getLogger("net.hearthstats.performance");
+
+    private int pollIteration = 0;
 
 	protected API _api = new API();
 	protected HearthstoneAnalyzer _analyzer = new HearthstoneAnalyzer();
@@ -575,31 +582,51 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 		_api.createMatch(hsMatch);
 	}
 	
-	protected void _handleHearthstoneFound() {
-		
+	protected void _handleHearthstoneFound(int pollIteration) {
+        long methodStartTime = System.nanoTime();
+
 		// mark hearthstone found if necessary
 		if (!_hearthstoneDetected) {
 			_hearthstoneDetected = true;
 			if(Config.showHsFoundNotification())
 				_notify("Hearthstone found");
 		}
-		
+
+
+        long screenStartTime = System.nanoTime();
 		// grab the image from Hearthstone
-		image = _hsHelper.getScreenCapture();
-		
+		image = _hsHelper.getScreenCapture(pollIteration);
+        long screenEndTime = System.nanoTime();
+        // Absolute Time, Type, Mode, Sequence Number, Event Time,
+        perflog.info("{},Screen,{},{},{}", new Object[] { System.currentTimeMillis(), _hearthstoneDetected ? "Found" : "NotFound", pollIteration, screenEndTime - screenStartTime });
+
+
+        long analyseStartTime = System.nanoTime();
+        boolean analyseSkipped = true;
 		if(image != null) {
 			// detect image stats 
 			if (image.getWidth() >= 1024)
-				if(!_analyzer.isAnalyzing())
+				if(!_analyzer.isAnalyzing()) {
 					_analyzer.analyze(image);
+                    analyseSkipped = false;
+                }
 			
 			if(Config.mirrorGameImage())
 				_updateImageFrame();
 		}
+        long analyseEndTime = System.nanoTime();
+        // Absolute Time, Type, Mode, Sequence Number, Event Time,
+        perflog.info("{},Analyse,{},{},{}", new Object[] { System.currentTimeMillis(), analyseSkipped ? "SkippedAnalysis" : "PerformedAnalysis", pollIteration, analyseEndTime - analyseStartTime });
+
+
+        long methodEndTime = System.nanoTime();
+        // Absolute Time, Type, Mode, Sequence Number, Event Time,
+        perflog.info("{},HandleFound,{},{},{}", new Object[] { System.currentTimeMillis(), _hearthstoneDetected ? (analyseSkipped ? "FoundSkipped" : "FoundPerformed") : "NotFound", pollIteration, methodEndTime - methodStartTime });
 	}
 	
-	protected void _handleHearthstoneNotFound() {
-		
+	protected void _handleHearthstoneNotFound(int pollIteration) {
+        long methodStartTime = System.nanoTime();
+
 		// mark hearthstone not found if necessary
 		if (_hearthstoneDetected) {
 			_hearthstoneDetected = false;
@@ -609,22 +636,37 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 			}
 			
 		}
+
+        long methodEndTime = System.nanoTime();
+        // Absolute Time, Type, Mode, Sequence Number, Event Time,
+        perflog.info("{},HandleNotFound,{},{},{}", new Object[] { System.currentTimeMillis(), _hearthstoneDetected ? "Found" : "NotFound", pollIteration, methodEndTime - methodStartTime });
+
 	}
 	
 	protected void _pollHearthstone() {
 		scheduledExecutorService.schedule(new Callable<Object>() {
 			public Object call() throws Exception {
+                pollIteration++;
+                boolean perfFoundProgram;
+                long startTime = System.nanoTime();
 				
-				if (_hsHelper.foundProgram())
-					_handleHearthstoneFound();
-				else
-					_handleHearthstoneNotFound();
+				if (_hsHelper.foundProgram(pollIteration)) {
+                    perfFoundProgram = true;
+					_handleHearthstoneFound(pollIteration);
+                } else {
+                    perfFoundProgram = false;
+					_handleHearthstoneNotFound(pollIteration);
+                }
 
 				_updateTitle();
 				
 				_pollHearthstone();		// repeat the process
-				
-				return "";
+
+                long endTime = System.nanoTime();
+                // Absolute Time, Type, Mode, Sequence Number, Event Time,
+                perflog.info("{},Poll,{},{},{}", new Object[] { System.currentTimeMillis(), perfFoundProgram ? "Found" : "NotFound", pollIteration, endTime - startTime });
+
+                return "";
 			}
 		}, _pollingIntervalInMs, TimeUnit.MILLISECONDS);
 	}

@@ -39,8 +39,8 @@ public class ProgramHelperWindows extends ProgramHelper {
 	}
 
 	@Override
-    public BufferedImage getScreenCapture() {
-		if (foundProgram()) {
+    public BufferedImage getScreenCapture(int pollIteration) {
+		if (foundProgram(0)) {
 
 			BufferedImage image;
 			
@@ -102,7 +102,7 @@ public class ProgramHelperWindows extends ProgramHelper {
 	}
 	
 	@Override
-    public boolean foundProgram() {
+    public boolean foundProgram(int pollIteration) {
 		
 		// windows version
 		if(_getWindowHandle() != null) {

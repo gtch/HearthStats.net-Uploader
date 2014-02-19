@@ -10,6 +10,8 @@ import org.rococoa.Rococoa;
 import org.rococoa.cocoa.foundation.NSArray;
 import org.rococoa.cocoa.foundation.NSAutoreleasePool;
 import org.rococoa.cocoa.foundation.NSString;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
@@ -20,6 +22,8 @@ import java.awt.image.WritableRaster;
  * @author gtch
  */
 public class ProgramHelperOsx extends ProgramHelper {
+
+    final Logger perflog = LoggerFactory.getLogger("net.hearthstats.performance");
 
     /**
      * The height of the title of an OS X window. This number of pixels are removed from the top of the screenshot
@@ -39,13 +43,17 @@ public class ProgramHelperOsx extends ProgramHelper {
 
 
     @Override
-    public BufferedImage getScreenCapture() {
+    public BufferedImage getScreenCapture(int pollIteration) {
+        long initpoolStartTime = System.nanoTime();
         final NSAutoreleasePool pool = NSAutoreleasePool.new_();
+        long initpoolEndTime = System.nanoTime();
+        // Absolute Time, Type, Mode, Sequence Number, Event Time,
+        perflog.info("{},ScreenPool,Init,{},{}", new Object[] { System.currentTimeMillis(), pollIteration, initpoolEndTime - initpoolStartTime });
         try {
 
             if (_windowId > 0) {
                 // We already know the ID of the program window.
-                BufferedImage image = getWindowImage(_windowId);
+                BufferedImage image = getWindowImage(_windowId, pollIteration);
                 if (image == null) {
                     // We seem to have lost the window?
                     _notifyObserversOfChangeTo("Warning! Window " + _windowId + " could not be found. No detection possible.");
@@ -65,7 +73,7 @@ public class ProgramHelperOsx extends ProgramHelper {
 
                 } else {
                     // The program was found, so take an image
-                    BufferedImage image = getWindowImage(_windowId);
+                    BufferedImage image = getWindowImage(_windowId, pollIteration);
                     System.out.println("* getScreenCapture() returning image for window " + _windowId);
                     return image;
                 }
@@ -77,15 +85,25 @@ public class ProgramHelperOsx extends ProgramHelper {
             ex.printStackTrace(System.err);
             throw new RuntimeException("Unable to create screen capture for  " + _bundleIdentifier + " due to exception", ex);
         } finally {
+            long poolStartTime = System.nanoTime();
             pool.drain();
+            long poolEndTime = System.nanoTime();
+            // Absolute Time, Type, Mode, Sequence Number, Event Time,
+            perflog.info("{},ScreenPool,Drain,{},{}", new Object[] { System.currentTimeMillis(), pollIteration, poolEndTime - poolStartTime });
         }
 
         return null;
     }
 
-    private BufferedImage getWindowImage(int windowId) {
+    private BufferedImage getWindowImage(int windowId, int pollIteration) {
+        long startTime = System.nanoTime();
         final NSAutoreleasePool pool = NSAutoreleasePool.new_();
+        long initpoolEndTime = System.nanoTime();
+        // Absolute Time, Type, Mode, Sequence Number, Event Time,
+        perflog.info("{},ImagePool,Init,{},{}", new Object[] { System.currentTimeMillis(), pollIteration, initpoolEndTime - startTime });
         try {
+            long createStartTime = System.nanoTime();
+
             // Create a CGRect with zero boundaries so that OS X automatically picks the correct size
             CoreGraphicsLibrary.CGRect bounds = new CoreGraphicsLibrary.CGRect.CGRectByValue();
             bounds.origin = new CoreGraphicsLibrary.CGPoint();
@@ -98,6 +116,12 @@ public class ProgramHelperOsx extends ProgramHelper {
             // Take a screenshot of the program window
             ID imageRef = CoreGraphicsLibrary.INSTANCE.CGWindowListCreateImage(bounds, CoreGraphicsLibrary.kCGWindowListOptionIncludingWindow | CoreGraphicsLibrary.kCGWindowListExcludeDesktopElements, windowId, CoreGraphicsLibrary.kCGWindowImageBoundsIgnoreFraming);
 
+            long createEndTime = System.nanoTime();
+            // Absolute Time, Type, Mode, Sequence Number, Event Time,
+            perflog.info("{},ImageCreate,{},{},{}", new Object[] { System.currentTimeMillis(), "-", pollIteration, createEndTime - createStartTime });
+
+            long repStartTime = System.nanoTime();
+
             // Convert the screenshot into a more useful ImageRep object, and retain the object so that it isn't lost before we extract the image data
             NSBitmapImageRep imageRep = NSBitmapImageRep.CLASS.alloc().initWithCGImage(imageRef).initWithCGImage(imageRef);
             imageRep.retain();
@@ -106,14 +130,28 @@ public class ProgramHelperOsx extends ProgramHelper {
             int height = imageRep.pixelsHigh();
             int heightWithoutTitle = height - WINDOW_TITLE_HEIGHT;
 
-            int format = imageRep.bitmapFormat();
+//            int format = imageRep.bitmapFormat();
+
+            long repEndTime = System.nanoTime();
+            // Absolute Time, Type, Mode, Sequence Number, Event Time,
+            perflog.info("{},ImageRep,{},{},{}", new Object[] { System.currentTimeMillis(), "-", pollIteration, repEndTime - repStartTime });
+
+
+            long pointerStartTime = System.nanoTime();
 
             Pointer bitmapPointer = imageRep.bitmapData();
+
+            long pointerEndTime = System.nanoTime();
+            // Absolute Time, Type, Mode, Sequence Number, Event Time,
+            perflog.info("{},ImageBitmapData,{},{},{}", new Object[] { System.currentTimeMillis(), "-", pollIteration, pointerEndTime - pointerStartTime });
+
             if (bitmapPointer == null || bitmapPointer == Pointer.NULL) {
                 imageRep.release();
                 return null;
 
             } else {
+                long bufferStartTime = System.nanoTime();
+
                 int[] data = bitmapPointer.getIntArray(0, width * height);
 
                 if (heightWithoutTitle > WINDOW_TITLE_HEIGHT) {
@@ -138,6 +176,11 @@ public class ProgramHelperOsx extends ProgramHelper {
                     Foundation.cfRelease(imageRef);
                     imageRep.release();
 
+                    long bufferEndTime = System.nanoTime();
+                    // Absolute Time, Type, Mode, Sequence Number, Event Time,
+                    perflog.info("{},ImageBuffer,{},{},{}", new Object[] { System.currentTimeMillis(), "-", pollIteration, bufferEndTime - bufferStartTime });
+
+
                     return image;
 
                 } else {
@@ -147,7 +190,13 @@ public class ProgramHelperOsx extends ProgramHelper {
             }
 
         } finally {
+            long poolStartTime = System.nanoTime();
             pool.drain();
+            long endTime = System.nanoTime();
+            // Absolute Time, Type, Mode, Sequence Number, Event Time,
+            perflog.info("{},ImagePool,Drain,{},{}", new Object[] { System.currentTimeMillis(), pollIteration, endTime - poolStartTime });
+            perflog.info("{},ImageTotal,-,{},{}", new Object[] { System.currentTimeMillis(), pollIteration, endTime - startTime });
+
         }
     }
 
@@ -192,7 +241,7 @@ public class ProgramHelperOsx extends ProgramHelper {
 
 
     @Override
-    public boolean foundProgram() {
+    public boolean foundProgram(int pollIteration) {
 
         int newPid = findProgramPid(_bundleIdentifier);
 
