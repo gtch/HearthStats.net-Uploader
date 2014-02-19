@@ -1,6 +1,7 @@
 package net.hearthstats;
 
 import java.awt.Container;
+import java.awt.Desktop;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,7 +35,7 @@ public class Updater {
 	public static void main(String[] args) {
 
 		if (Config.analyticsEnabled()) {
-			_analytics = new JGoogleAnalyticsTracker("HearthStats.net Uploader", Config.getVersion(), "UA-45442103-3");
+			_analytics = new JGoogleAnalyticsTracker("HearthStats.net Uploader", Config.getVersionWithOs(), "UA-45442103-3");
 			_analytics.trackAsynchronously(new FocusPoint("UpdateStart"));
 		}
 		
@@ -173,7 +174,14 @@ public class Updater {
 		JOptionPane.showMessageDialog(null, "Update complete. Attempting to restart ...");
 		_notify("Restarting ...");
 		try {
-			Runtime.getRuntime().exec("HearthStats.exe");
+			switch(Config.os.toString()) {
+				case "WINDOWS":	
+					Runtime.getRuntime().exec("HearthStats.exe");
+					break;
+				case "OSX":	
+					Desktop.getDesktop().open(new File("HearthStats.app"));
+					break;
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 			_notifyException(e);
@@ -182,7 +190,16 @@ public class Updater {
 
 	private static void _downloadUpdate() throws IOException {
 		URL website;
-		website = new URL("https://github.com/JeromeDane/HearthStats.net-Uploader/releases/download/v" + getAvailableVersion() + "/HearthStats.net.Uploader.v" + getAvailableVersion() + ".zip");
+		String zipUrl = null;
+		switch(Config.os.toString()) {
+			case "WINDOWS":
+				 zipUrl = "https://github.com/JeromeDane/HearthStats.net-Uploader/releases/download/v" + getAvailableVersion() + "/HearthStats.net.Uploader.v" + getAvailableVersion() + ".zip";
+				 break;
+			case "OSX":
+				zipUrl = "https://github.com/JeromeDane/HearthStats.net-Uploader/releases/download/v" + getAvailableVersion() + "-osx/HearthStats.net.Uploader.v" + getAvailableVersion() + "-osx.zip";
+				break;
+		}
+		website = new URL(zipUrl);
 		ReadableByteChannel rbc = Channels.newChannel(website.openStream());
 		FileOutputStream fos = new FileOutputStream(Main.getExtractionFolder() + "/update.zip");
 		fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
@@ -208,13 +225,19 @@ public class Updater {
 
 	public static String getAvailableVersion() {
 		if (_availableVersion == null) {
-			_availableVersion = _readRemoteFile("https://raw.github.com/JeromeDane/HearthStats.net-Uploader/master/src/version");
+			String url = "https://raw.github.com/JeromeDane/HearthStats.net-Uploader/master/src/version";
+			if(Config.os.toString().equals("OSX"))
+				url += "-osx";
+			_availableVersion = _readRemoteFile(url);
 		}
 		return _availableVersion;
 	}
 	public static String getRecentChanges() {
 		if (_recentChanges == null) {
-			_recentChanges = _readRemoteFile("https://raw.github.com/JeromeDane/HearthStats.net-Uploader/master/src/recentchanges");
+			String url = "https://raw.github.com/JeromeDane/HearthStats.net-Uploader/master/src/recentchanges";
+			if(Config.os.toString().equals("OSX"))
+				url += "-osx";
+			_recentChanges = _readRemoteFile(url);
 		}
 		return _recentChanges;
 	}

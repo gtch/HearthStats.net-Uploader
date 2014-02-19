@@ -5,21 +5,16 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.event.WindowStateListener;
 import java.awt.image.BufferedImage;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.Callable;
@@ -27,6 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -37,9 +33,10 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.UIManager;
-import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.HyperlinkListener;
 import net.miginfocom.swing.MigLayout;
 
@@ -95,7 +92,7 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 
     public void start() throws IOException {
 		if(Config.analyticsEnabled()) {
-			_analytics = new JGoogleAnalyticsTracker("HearthStats.net Uploader", Config.getVersion(), "UA-45442103-3");
+			_analytics = new JGoogleAnalyticsTracker("HearthStats.net Uploader", Config.getVersionWithOs(), "UA-45442103-3");
 			_analytics.trackAsynchronously(new FocusPoint("AppStart"));
 		}
 		addWindowListener(this);
@@ -142,11 +139,9 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 			try {
 				d.browse(new URI("http://beta.hearthstats.net/profiles"));
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				Main.logException(e);
 			} catch (URISyntaxException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				Main.logException(e);
 			}
 			
 			String[] options = {"OK", "Cancel"};
@@ -190,33 +185,15 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 		_logText.setEditable(false);
 		_logText.setText("Event Log:\n");
 		_logText.setEditable(false);
-		_logText.addHyperlinkListener(new HyperlinkListener() {
-			@Override
-			public void hyperlinkUpdate(HyperlinkEvent e) {
-				if (HyperlinkEvent.EventType.ACTIVATED == e.getEventType()) {
-					if (Desktop.isDesktopSupported()) {
-						// Create Desktop object
-						Desktop d = Desktop.getDesktop();
-						// Browse a URL, say google.com
-						try {
-							d.browse(new URI(e.getURL().toString()));
-						} catch (IOException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						} catch (URISyntaxException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						}
-					}
-				}
-			}
-		});
+		_logText.addHyperlinkListener(_hyperLinkListener);
 		_logScroll = new JScrollPane (_logText, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		tabbedPane.add(_logScroll, "Main");
+		tabbedPane.add(_logScroll, "Log");
 		
+		tabbedPane.add(_createMatchUi(), "Current Match");
 		tabbedPane.add(_createOptionsUi(), "Options");
 		tabbedPane.add(_createAboutUi(), "About");
 		
+		_updateCurrentMatchUi();
 		
 		_enableMinimizeToTray();
 		
@@ -227,11 +204,19 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 		
 		_updateTitle();
 	}
+	
+	private HyperlinkListener _hyperLinkListener = HyperLinkHandler.getInstance();
+	private JTextField _currentOpponentNameField;
+	private JLabel _currentMatchLabel;
+	private JLabel _currentYourClassLabel;
+	private JCheckBox _currentGameCoinField;
+	private JTextArea _currentNotesField;
 
-	private JPanel _createAboutUi() {
-		JPanel panel = new JPanel();
-		panel.setBackground(Color.WHITE);
+	private JScrollPane _createAboutUi() {
 		
+		JPanel panel = new JPanel();
+		panel.setMaximumSize(new Dimension(100,100));		
+		panel.setBackground(Color.WHITE);
 		MigLayout layout = new MigLayout("");
 		panel.setLayout(layout);
 		
@@ -242,38 +227,19 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 		text.setText("<html><body style=\"font-family:arial,sans-serif; font-size:10px;\">" +
 				"<h2 style=\"font-weight:normal\"><a href=\"http://hearthstats.net\">HearthStats.net</a> uploader v" + Config.getVersion() + "</h2>" +
 				"<p><strong>Author:</strong> Jerome Dane (<a href=\"https://plus.google.com/+JeromeDane\">Google+</a>, <a href=\"http://twitter.com/JeromeDane\">Twitter</a>)</p>" + 
-				"<p>This utility uses screen grab analysis of your Hearthstone window and does not do any packet sniffing, monitoring, or network modification of any kind.</p>" +
-				"<p>This project is and always will be open source so that you can do your own builds and see exactly what's happening within the program.</p>" +
+				"<p>This utility uses screen grab analysis of your Hearthstone window<br>" +
+					"and does not do any packet sniffing, monitoring, or network<br>" +
+					"modification of any kind.</p>" +
+				"<p>This project is and always will be open source so that you can do<br>" +
+					"your own builds and see exactly what's happening within the program.</p>" +
 				"<p>&bull; <a href=\"https://github.com/JeromeDane/HearthStats.net-Uploader/\">Project source on GitHub</a><br/>" +
 				"&bull; <a href=\"https://github.com/JeromeDane/HearthStats.net-Uploader/releases\">Latest releases & changelog</a><br/>" +
 				"&bull; <a href=\"https://github.com/JeromeDane/HearthStats.net-Uploader/issues\">Feedback and suggestions</a><br/>" +
 				"&bull; <a href=\"http://redd.it/1wa4rc/\">Reddit thread</a> (please up-vote)</p>" +
-				"<p>Support this project:</p>" +
+				"<p><strong>Support this project:</strong></p>" +
 				"</body></html>"
 			);
-		
-	    text.addHyperlinkListener(new HyperlinkListener() {
-	        @Override
-	        public void hyperlinkUpdate(HyperlinkEvent e) {
-	            if (HyperlinkEvent.EventType.ACTIVATED == e.getEventType()) {
-	            	if (Desktop.isDesktopSupported()) {
-	            		// Create Desktop object
-	        			Desktop d = Desktop.getDesktop();
-	        			// Browse a URL, say google.com
-	        			try {
-	        				d.browse(new URI(e.getURL().toString()));
-	        			} catch (IOException e1) {
-	        				// TODO Auto-generated catch block
-	        				e1.printStackTrace();
-	        			} catch (URISyntaxException e1) {
-	        				// TODO Auto-generated catch block
-	        				e1.printStackTrace();
-	        			}
-	            	}
-	            }
-	        }
-	    });
-	    
+	    text.addHyperlinkListener(_hyperLinkListener);
 	    panel.add(text, "wrap");
 		
 	    JButton donateButton = new JButton("<html><img style=\"border-style: none;\" src=\"" + getClass().getResource("/images/donate.gif") + "\"/></html>");
@@ -285,18 +251,93 @@ public class Monitor extends JFrame implements Observer, WindowListener {
     			// Browse a URL, say google.com
     			try {
     				d.browse(new URI("https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=UJFTUHZF6WPDS"));
-    			} catch (IOException e1) {
-    				// TODO Auto-generated catch block
-    				e1.printStackTrace();
-    			} catch (URISyntaxException e1) {
-    				// TODO Auto-generated catch block
-    				e1.printStackTrace();
+    			} catch (Exception e1) {
+    				Main.logException(e1);
     			}
 	    	}
 	    });
 	    donateButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-	    panel.add(donateButton);
-		return panel;
+	    panel.add(donateButton, "wrap");
+	    
+	    JEditorPane contribtorsText = new JEditorPane();
+	    contribtorsText.setContentType("text/html");
+	    contribtorsText.setEditable(false);
+	    contribtorsText.setBackground(Color.WHITE);
+	    contribtorsText.setText("<html><body style=\"font-family:arial,sans-serif; font-size:10px;\">" +
+				"<p><strong>Contributors</strong> (listed alphabetically):</p>" +
+				"<p>" +
+					"&bull; <a href=\"http://charlesgutjahr.com\">Charles Gutjahr</a> - Added OSx support<br>" +
+					"&bull; <a href=\"https://github.com/sargonas\">J Eckert</a> - Fixed notifications spawning taskbar icons<br>" +
+					"&bull; <a href=\"https://github.com/nwalsh1995\">nwalsh1995</a> - Started turn detection development<br>" +
+					"&bull; <a href=\"https://github.com/remcoros\">Remco Ros</a> (<a href=\"http://hearthstonetracker.com/\">HearthstoneTracker</a>) - Provides advice & suggestins<br>" +
+					"&bull; <a href=\"https://github.com/RoiyS\">RoiyS</a> - Added option to disable all notifications<br>" +
+				"</p>"+
+				"</body></html>"
+			);
+	    contribtorsText.addHyperlinkListener(_hyperLinkListener);
+	    panel.add(contribtorsText, "wrap");
+	    
+		return new JScrollPane(panel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+	}
+	private JPanel _createMatchUi() {
+		JPanel panel = new JPanel();
+
+		MigLayout layout = new MigLayout();
+		panel.setLayout(layout);
+		
+		// match label
+		panel.add(new JLabel(" "), "wrap");
+		_currentMatchLabel = new JLabel();
+		panel.add(_currentMatchLabel, "skip,span,wrap");
+		
+		panel.add(new JLabel(" "), "wrap");
+		
+		// opponent class
+		panel.add(new JLabel("Opponent's Class: "), "skip,right");
+		_currentOpponentClassLabel = new JLabel();
+		panel.add(_currentOpponentClassLabel, "wrap");
+		
+		// Opponent name
+		panel.add(new JLabel("Opponent's Name: "), "skip,right");
+		_currentOpponentNameField = new JTextField();
+		_currentOpponentNameField.setMinimumSize(new Dimension(100, 1));
+		_currentOpponentNameField.addKeyListener(new KeyAdapter() {
+			public void keyReleased(KeyEvent e) {
+				_analyzer.getMatch().setOpponentName(_currentOpponentNameField.getText().replaceAll("(\r\n|\n)", "<br/>"));
+	        }
+	    });
+		panel.add(_currentOpponentNameField, "wrap");
+		
+		// your class
+		panel.add(new JLabel("Your Class: "), "skip,right");
+		_currentYourClassLabel = new JLabel();
+		panel.add(_currentYourClassLabel, "wrap");
+		
+		// coin
+		panel.add(new JLabel("Coin: "), "skip,right");
+		_currentGameCoinField = new JCheckBox("started with the coin");
+		_currentGameCoinField.setSelected(Config.showHsClosedNotification());
+		_currentGameCoinField.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				_analyzer.getMatch().setCoin(_currentGameCoinField.isSelected());
+			}
+		});
+		panel.add(_currentGameCoinField, "wrap");
+		
+		// notes
+		panel.add(new JLabel("Notes: "), "skip,wrap");
+		_currentNotesField = new JTextArea();
+		_currentNotesField.setBorder(BorderFactory.createMatteBorder( 1, 1, 1, 1, Color.black ));
+		_currentNotesField.setMinimumSize(new Dimension(350,150));
+	    _currentNotesField.setBackground(Color.WHITE);
+	    _currentNotesField.addKeyListener(new KeyAdapter() {
+			public void keyReleased(KeyEvent e) {
+				_analyzer.getMatch().setNotes(_currentNotesField.getText());
+	        }
+	    });
+	    panel.add(_currentNotesField, "skip,span");
+
+	    return panel;
 	}
 	private JPanel _createOptionsUi() {
 		JPanel panel = new JPanel();
@@ -496,6 +537,8 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 	};
 
 	protected NotificationQueue _notificationQueue = new NotificationQueue();
+	private JLabel _currentOpponentClassLabel;
+	private Boolean _currentMatchEnabled = false;
 
 	protected void _notify(String header) {
 		_notify(header, "");
@@ -534,7 +577,19 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 		setTitle(title);
 	}
 
-	protected void _updateImageFrame() {
+	private void _updateCurrentMatchUi() {
+		HearthstoneMatch match = _analyzer.getMatch();
+		if(_currentMatchEnabled)
+			_currentMatchLabel.setText(match.getMode() + " Match - " + " Turn " + match.getNumTurns());
+		else 
+			_currentMatchLabel.setText("Waiting for next match to start ...");
+		_currentOpponentClassLabel.setText(match.getOpponentClass() == null ? "[n/a]" : match.getOpponentClass());
+		_currentOpponentNameField.setText(match.getOpponentName());
+		_currentYourClassLabel.setText(match.getUserClass() == null ? "[n/a]" : match.getUserClass());
+		_currentGameCoinField.setSelected(match.hasCoin());
+		_currentNotesField.setText(match.getNotes());
+	}
+	private void _updateImageFrame() {
 		if (!_drawPaneAdded) {
 			add(_drawPane);
 		}
@@ -548,17 +603,7 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 	}
 
 	private void _submitMatchResult() throws IOException {
-		HearthstoneMatch hsMatch = new HearthstoneMatch();
-		hsMatch.setMode(_analyzer.getMode());
-		hsMatch.setUserClass(_analyzer.getYourClass());
-		hsMatch.setDeckSlot(_analyzer.getDeckSlot());
-		hsMatch.setOpponentClass(_analyzer.getOpponentClass());
-		hsMatch.setOpponentName(_analyzer.getOpponentName());
-		hsMatch.setCoin(_analyzer.getCoin());
-		hsMatch.setRankLevel(_analyzer.getRankLevel());
-		hsMatch.setResult(_analyzer.getResult());
-		hsMatch.setNumTurns(_analyzer.getNumTurns());
-		hsMatch.setDuration(_analyzer.getDuration());
+		HearthstoneMatch hsMatch = _analyzer.getMatch();
 		
 		// check for new arena run
 		if(hsMatch.getMode() == "Arena" && _analyzer.isNewArena()) {
@@ -687,6 +732,7 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 				_log("Deck Slot " + _analyzer.getDeckSlot() + " Detected");
 				break;
 			case "mode":
+				_setCurrentMatchUEnabledi(false);
 				if(Config.showModeNotification()) {
 					System.out.println(_analyzer.getMode() + " level " + _analyzer.getRankLevel());
 					if(_analyzer.getMode() == "Ranked")
@@ -718,6 +764,8 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 				_submitMatchResult();
 				break;
 			case "screen":
+				if(_analyzer.getScreen() == "Match Start")
+					_setCurrentMatchUEnabledi(true);
 				if(_analyzer.getScreen() != "Result" && Config.showScreenNotification()) {
 					if(_analyzer.getScreen() == "Practice")
 						_notify(_analyzer.getScreen() + " Screen Detected", "Results are not tracked in practice mode");
@@ -726,8 +774,11 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 				}
 				if(_analyzer.getScreen() == "Practice")
 					_log(_analyzer.getScreen() + " Screen Detected. Result tracking disabled.");
-				else
+				else {
+					if(_analyzer.getScreen() == "Match Start")
+						_log("\n------------------------------------------");
 					_log(_analyzer.getScreen() + " Screen Detected");
+				}
 				break;
 			case "yourClass":
 				_notify("Playing as " + _analyzer.getYourClass());
@@ -742,6 +793,7 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 				_notify(changed.toString());
 				_log(changed.toString());
 		}
+		_updateCurrentMatchUi();
 	}
 	
 	private void _clearLog() {
@@ -749,28 +801,12 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 		file.delete();
 	}
 	private void _log(String str) {
-		PrintWriter out = null;
-		try {
-			out = new PrintWriter(new BufferedWriter(new FileWriter("log.txt", true)));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		out.println(str);
-		out.close();
+		
+		Main.log(str);
 		
 		// read in log
 		String logText = "<html><body style=\"font-family:arial,sans-serif; font-size:10px;\">";
-		List<String> lines = null;
-		try {
-			lines = Files.readAllLines(Paths.get("log.txt"), Charset.defaultCharset());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		for (String line : lines) {
-			logText += line + "<br/>";
-        }
+		logText += Main.getLogText().replaceAll("\n", "<br>");
 		logText += "</body></html>";
 		_logText.setText(logText);
 		
@@ -786,6 +822,11 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 			case "result":
 				_notify("API Result", _api.getMessage());
 				_log("API Result: " + _api.getMessage());
+				
+				// new line after match result
+				if(_api.getMessage().matches(".*(Edit match|Arena match successfully created).*"))
+					_log("------------------------------------------\n");
+				
 				break;
 		}
 	}
@@ -806,14 +847,12 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 			try {
 				_handleAnalyzerEvent(changed);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				_notify("Exception", e.getMessage());
+				Main.logException(e);
 			}
 		if(dispatcher.getClass().toString().matches(".*API"))
 			_handleApiEvent(changed);
 		
-		if(dispatcher.getClass().toString().matches(".*ProgramHelper"))
+		if(dispatcher.getClass().toString().matches(".*ProgramHelper(Windows|Osx)?"))
 			_handleProgramHelperEvent(changed);
 	}
 
@@ -882,17 +921,18 @@ public class Monitor extends JFrame implements Observer, WindowListener {
 		JOptionPane.showMessageDialog(null, "Options Saved");
 	}
 	
+	private void _setCurrentMatchUEnabledi(Boolean enabled){
+		_currentMatchEnabled = enabled;
+		_currentGameCoinField.setEnabled(enabled);
+		_currentOpponentNameField.setEnabled(enabled);
+		_currentNotesField.setEnabled(enabled);
+	}
+	
 	//http://stackoverflow.com/questions/7461477/how-to-hide-a-jframe-in-system-tray-of-taskbar
 	TrayIcon trayIcon;
     SystemTray tray;
     private void _enableMinimizeToTray(){
         System.out.println("creating instance");
-        try{
-            System.out.println("setting look and feel");
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        }catch(Exception e){
-            System.out.println("Unable to set LookAndFeel");
-        }
         if(SystemTray.isSupported()){
         	
             System.out.println("system tray supported");
