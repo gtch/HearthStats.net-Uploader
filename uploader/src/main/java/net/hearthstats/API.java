@@ -103,7 +103,7 @@ public class API extends Observable {
 	
 
 	private Object _get(String method) throws MalformedURLException, IOException {
-        String baseUrl = Config.getApiBaseUrl() + method + "?userkey=";
+        String baseUrl = ConfigDeprecated.getApiBaseUrl() + method + "?userkey=";
         // Log the URL with the userkey obscured so that users don't compromise their key if they share their logs
         debugLog.debug("API get {}********", baseUrl);
         URL url = new URL(baseUrl + _getKey());
@@ -157,7 +157,7 @@ public class API extends Observable {
 	}
 	
 	private JSONObject _post(String method, JSONObject jsonData) throws IOException {
-        String baseUrl = Config.getApiBaseUrl() + method + "?userkey=";
+        String baseUrl = ConfigDeprecated.getApiBaseUrl() + method + "?userkey=";
         if (debugLog.isDebugEnabled()) {
             // Log the URL with the userkey obscured so that users don't compromise their key if they share their logs
             debugLog.debug("API post {}********", baseUrl);
@@ -204,7 +204,7 @@ public class API extends Observable {
 	}
 	
 	private String _getKey() throws IOException {
-		return Config.getUserKey();
+		return ConfigDeprecated.getUserKey();
 	}
 	
 	private void _dispatchResultMessage(String message) {

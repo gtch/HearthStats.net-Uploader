@@ -1,7 +1,7 @@
 package net.hearthstats.logmonitor
 
 import org.slf4j.LoggerFactory
-import net.hearthstats.Config
+import net.hearthstats.ConfigDeprecated
 import org.apache.commons.io.input.Tailer
 import java.io.File
 import org.apache.commons.io.input.TailerListenerAdapter
@@ -16,7 +16,7 @@ import net.hearthstats.util.FileObserver
 import net.hearthstats.logmonitor.CardEvents._
 
 class HearthstoneLogMonitor(logFile: String) {
-  def this() = this(Config.programHelper.hearthstoneLogFile) // for java calls
+  def this() = this(ConfigDeprecated.programHelper.hearthstoneLogFile) // for java calls
 
   val debugLog = LoggerFactory.getLogger(classOf[HearthstoneLogMonitor])
   val LOADING_SCREEN_PREFIX = "[LoadingScreen]"

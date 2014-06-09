@@ -5,7 +5,7 @@ import java.text.MessageFormat
 import java.util.Observable
 import java.util.ResourceBundle
 import net.hearthstats.BackgroundImageSave
-import net.hearthstats.Config
+import net.hearthstats.ConfigDeprecated
 import net.hearthstats.HearthstoneMatch
 import net.hearthstats.Main
 import net.hearthstats.log.Log
@@ -206,7 +206,7 @@ class HearthstoneAnalyser extends Observable {
           startTimer()
           if ((previousScreen != null && previousScreen.group == ScreenGroup.MATCH_START) &&
             (`match`.opponentClass == null || `match`.userClass == null)) {
-            Log.warn(t("warning.classdetection", Config.getExtractionFolder))
+            Log.warn(t("warning.classdetection", ConfigDeprecated.getExtractionFolder))
           }
 
         case MATCH_END => //break
