@@ -263,31 +263,6 @@ public class ConfigDeprecated {
         }
     }
 
-    public static String getVersion() {
-		if(_version == null) {
-			_version = "";
-			String versionFile = "/version";
-//			if(Config.os.toString().equals("OSX")) {
-//				versionFile += "-osx";
-//			}
-			InputStream in = ConfigDeprecated.class.getResourceAsStream(versionFile);
-            BufferedReader br = new BufferedReader(new InputStreamReader(in));
-            String strLine;
-            try {
-				while ((strLine = br.readLine()) != null)   {
-				    _version += strLine;
-				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				JOptionPane.showMessageDialog(null, "Exception in Config: " + e.toString());
-			}
-		}
-		return _version;
-	}
-	public static String getVersionWithOs() {
-		return getVersion() + '-' + os;
-	}
 
     public static void setUseOsxNotifications(boolean val) {
         setBooleanValue("notifications", "osx", val);

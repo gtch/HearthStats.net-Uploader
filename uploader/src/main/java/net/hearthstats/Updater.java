@@ -1,13 +1,11 @@
 package net.hearthstats;
 
+import com.dmurph.tracking.JGoogleAnalyticsTracker;
 import net.hearthstats.ConfigDeprecated.OS;
 import net.hearthstats.notification.DialogNotificationQueue;
 import net.hearthstats.notification.NotificationQueue;
 
 import javax.swing.*;
-
-import com.dmurph.tracking.JGoogleAnalyticsTracker;
-
 import java.awt.*;
 import java.io.*;
 import java.net.MalformedURLException;

@@ -1,7 +1,7 @@
 package net.hearthstats;
 
+import net.hearthstats.config.Application;
 import net.hearthstats.config.Environment;
-import net.hearthstats.log.Log;
 import net.hearthstats.log.LogPane;
 import net.hearthstats.notification.DialogNotification;
 import net.sourceforge.tess4j.Tesseract;
@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.*;
+import java.io.File;
 
 public final class Main {
   private Main() {} // never instantiated
@@ -20,14 +20,14 @@ public final class Main {
 
   private static String ocrLanguage = "eng";
 
-  private static Monitor _monitor;
+  private static Monitor monitor;
 
 
   public static LogPane getLogPane() {
-    if (_monitor == null) {
+    if (monitor == null) {
       return null;
     } else {
-      return _monitor.getLogPane();
+      return monitor.getLogPane();
     }
   }
 
@@ -61,35 +61,14 @@ public final class Main {
       Updater.cleanUp();
       ConfigDeprecated.rebuild();
 
-      logSystemInformation();
+      logSystemInformation(environment);
 
-      cleanupDebugFiles();
-
-      setupTesseract();
-
-      try {
-        switch (environment.os()) {
-          case WINDOWS:
-            loadJarDll("liblept168");
-            loadJarDll("libtesseract302");
-            break;
-          case OSX:
-            loadOsxDylib("lept");
-            loadOsxDylib("tesseract");
-            break;
-          default:
-            throw new UnsupportedOperationException("HearthStats.net Uploader only supports Windows and Mac OS X");
-        }
-      } catch (Throwable e) {
-        Log.error("Error loading libraries", e);
-        showLibraryErrorMessage(e);
-        System.exit(0);
-      }
+      cleanupDebugFiles(environment);
 
       loadingNotification.close();
 
-      _monitor = new Monitor();
-      _monitor.start();
+      monitor = new Monitor(environment);
+      monitor.start();
 
     } catch (Throwable e) {
       Main.showErrorDialog("Error in Main", e);
@@ -99,69 +78,25 @@ public final class Main {
   }
 
 
-  private static void showLibraryErrorMessage(Throwable e) {
-    String title;
-    Object[] message;
-    if (e instanceof UnsatisfiedLinkError) {
-      // A library that Tesseract or Leptonica expects to find on this system isn't there
-      title = "Expected libraries are not installed";
-      if (ConfigDeprecated.os == ConfigDeprecated.OS.WINDOWS && "amd64".equals(ConfigDeprecated.getSystemProperty("os.arch"))) {
-        // This is the most common scenario - the user is using 64-bit Windows and there is no 64-bit library installed by default
-        message = new Object[]{
-          new JLabel("The HearthStats Uploader requires the Visual C++ Redistributable to be installed."),
-          new JLabel("Please download the 64-bit installer (vcredist_x64.exe) from"),
-          HyperLinkHandler.getUrlLabel("http://www.microsoft.com/en-US/download/details.aspx?id=30679"),
-          new JLabel("and install it before using the HearthStats Uploader.")
-        };
-      } else if (ConfigDeprecated.os == ConfigDeprecated.OS.WINDOWS) {
-        // There is no known problem with other variants of Windows, but just in case this does occur we show a similar message
-        message = new Object[]{
-          new JLabel("The HearthStats Uploader requires the Visual C++ Redistributable to be installed."),
-          new JLabel("Please download the installer from"),
-          HyperLinkHandler.getUrlLabel("http://www.microsoft.com/en-US/download/details.aspx?id=30679"),
-          new JLabel("and install it before using the HearthStats Uploader.")
-        };
-      } else {
-        message = new Object[]{
-          new JLabel("The HearthStats Uploader was unable to start because expected system libraries were not found."),
-          new JLabel("Please check your log.txt file for details."),
-          new JLabel(" "),
-          new JLabel("Exiting...")
-        };
-      }
-    } else {
-      title = e.getMessage();
-      message = new Object[]{
-        new JLabel("The HearthStats Uploader was unable to start because the OCR libraries could not be read."),
-        new JLabel("Is the app already running?"),
-        new JLabel(" "),
-        new JLabel("Exiting...")
-      };
-    }
-
-    JOptionPane.showMessageDialog(null, message, title, JOptionPane.ERROR_MESSAGE);
-  }
-
-
-  private static void logSystemInformation() {
+  private static void logSystemInformation(Environment environment) {
     if (debugLog.isInfoEnabled()) {
       debugLog.info("**********************************************************************");
-      debugLog.info("  Starting HearthStats.net Uploader {} on {}", ConfigDeprecated.getVersion(), ConfigDeprecated.os);
-      debugLog.info("  os.name={}", ConfigDeprecated.getSystemProperty("os.name"));
-      debugLog.info("  os.version={}", ConfigDeprecated.getSystemProperty("os.version"));
-      debugLog.info("  os.arch={}", ConfigDeprecated.getSystemProperty("os.arch"));
-      debugLog.info("  java.runtime.version={}", ConfigDeprecated.getSystemProperty("java.runtime.version"));
-      debugLog.info("  java.class.path={}", ConfigDeprecated.getSystemProperty("java.class.path"));
-      debugLog.info("  java.library.path={}", ConfigDeprecated.getSystemProperty("java.library.path"));
-      debugLog.info("  user.language={}", ConfigDeprecated.getSystemProperty("user.language"));
+      debugLog.info("  Starting HearthStats.net Uploader {} on {}", Application.version(), environment.os());
+      debugLog.info("  os.name={}", environment.systemProperty("os.name"));
+      debugLog.info("  os.version={}", environment.systemProperty("os.version"));
+      debugLog.info("  os.arch={}", environment.systemProperty("os.arch"));
+      debugLog.info("  java.runtime.version={}", environment.systemProperty("java.runtime.version"));
+      debugLog.info("  java.class.path={}", environment.systemProperty("java.class.path"));
+      debugLog.info("  java.library.path={}", environment.systemProperty("java.library.path"));
+      debugLog.info("  user.language={}", environment.systemProperty("user.language"));
       debugLog.info("**********************************************************************");
     }
   }
 
 
-  private static void cleanupDebugFiles() {
+  private static void cleanupDebugFiles(Environment environment) {
     try {
-      File folder = new File(ConfigDeprecated.getExtractionFolder());
+      File folder = new File(environment.extractionFolder());
       if (folder.exists()) {
         File[] files = folder.listFiles();
         for (File file : files) {
@@ -177,107 +112,10 @@ public final class Main {
   }
 
 
-  public static void setupTesseract() {
-    debugLog.debug("Extracting Tesseract data");
-    String outPath;
-    if (ConfigDeprecated.os == ConfigDeprecated.OS.OSX) {
-      File javaLibraryPath = new File(ConfigDeprecated.getJavaLibraryPath());
-      outPath = javaLibraryPath.getParentFile().getAbsolutePath() + "/Resources";
-    } else {
-      outPath = ConfigDeprecated.getExtractionFolder() + "/";
-      (new File(outPath + "tessdata/configs")).mkdirs();
-      copyFileFromJarTo("/tessdata/eng.traineddata", outPath + "tessdata/eng.traineddata");
-      copyFileFromJarTo("/tessdata/configs/api_config", outPath + "tessdata/configs/api_config");
-      copyFileFromJarTo("/tessdata/configs/digits", outPath + "tessdata/configs/digits");
-      copyFileFromJarTo("/tessdata/configs/hocr", outPath + "tessdata/configs/hocr");
-    }
-
+  public static void setupTesseract(String outPath) {
     Tesseract instance = Tesseract.getInstance();
     instance.setDatapath(outPath + "tessdata");
     instance.setLanguage(ocrLanguage);
   }
 
-
-  public static void copyFileFromJarTo(String jarPath, String outPath) {
-    InputStream stream = Main.class.getResourceAsStream(jarPath);
-    if (stream == null) {
-      Log.error("Exception: Unable to load file from JAR: " + jarPath);
-      Main.showMessageDialog(null, "Exception: Unable to find " + jarPath + " in .jar file\n\nSee log.txt for details");
-      System.exit(1);
-    } else {
-      OutputStream resStreamOut = null;
-      int readBytes;
-      byte[] buffer = new byte[4096];
-      try {
-        resStreamOut = new FileOutputStream(new File(outPath));
-        while ((readBytes = stream.read(buffer)) > 0) {
-          resStreamOut.write(buffer, 0, readBytes);
-        }
-      } catch (IOException e) {
-        Main.showErrorDialog("Error writing file " + outPath, e);
-      } finally {
-        try {
-          stream.close();
-          resStreamOut.close();
-        } catch (IOException e) {
-          Main.showErrorDialog("Error closing stream for " + jarPath, e);
-        }
-      }
-    }
-  }
-
-
-  private static void loadJarDll(String name) throws FileNotFoundException, UnsatisfiedLinkError {
-    debugLog.debug("Loading DLL {}", name);
-    String resourcePath = "/lib/" + name + "_" + System.getProperty("sun.arch.data.model") + ".dll";
-    InputStream in = Main.class.getResourceAsStream(resourcePath);
-    if (in != null) {
-      byte[] buffer = new byte[1024];
-      int read = -1;
-
-      File outDir = new File(ConfigDeprecated.getExtractionFolder());
-      outDir.mkdirs();
-      String outPath = outDir.getPath() + "/";
-
-      String outFileName = name.replace("_32", "").replace("_64", "") + ".dll";
-
-      FileOutputStream fos = null;
-      fos = new FileOutputStream(outPath + outFileName);
-
-      try {
-        while ((read = in.read(buffer)) != -1) {
-          fos.write(buffer, 0, read);
-        }
-        fos.close();
-        in.close();
-
-      } catch (IOException e) {
-        debugLog.error("Error copying DLL " + name, e);
-      }
-      try {
-        System.loadLibrary(outPath + name);
-      } catch (UnsatisfiedLinkError e) {
-        debugLog.error("UnsatisfiedLinkError loading DLL " + name, e);
-        throw e;
-      } catch (Exception e) {
-        debugLog.error("Error loading DLL " + name, e);
-      }
-    } else {
-      Main.showErrorDialog("Error loading " + name, new Exception("Unable to load library from " + resourcePath));
-    }
-  }
-
-
-  private static void loadOsxDylib(String name) throws UnsatisfiedLinkError {
-    debugLog.debug("Loading dylib {}", name);
-    try {
-      System.loadLibrary(name);
-    } catch (UnsatisfiedLinkError e) {
-      debugLog.error("UnsatisfiedLinkError loading dylib " + name, e);
-      throw e;
-    } catch (Exception e) {
-      debugLog.error("Error loading dylib " + name, e);
-    }
-
-  }
 }

@@ -60,6 +60,8 @@ import javax.swing.event.HyperlinkListener;
 
 import net.hearthstats.analysis.AnalyserEvent;
 import net.hearthstats.analysis.HearthstoneAnalyser;
+import net.hearthstats.config.Application;
+import net.hearthstats.config.Environment;
 import net.hearthstats.log.Log;
 import net.hearthstats.log.LogPane;
 import net.hearthstats.logmonitor.HearthstoneLogMonitor;
@@ -103,8 +105,10 @@ public class Monitor extends JFrame implements Observer {
     "Warrior"
   };
 
+  private final Environment environment;
+  private final HearthstoneAnalyser analyzer;
+
   protected API api = new API();
-  protected HearthstoneAnalyser analyzer = new HearthstoneAnalyser();
   protected ProgramHelper hsHelper = ConfigDeprecated.programHelper();
   protected HearthstoneLogMonitor hearthstoneLogMonitor;
   protected boolean _drawPaneAdded = false;
@@ -173,21 +177,10 @@ public class Monitor extends JFrame implements Observer {
 
 
 
-  public Monitor() throws HeadlessException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-    notificationQueue = newNotificationQueue();
-  }
-
-
-  private static NotificationQueue newNotificationQueue() {
-    if (ConfigDeprecated.useOsxNotifications()) {
-      try {
-        return (NotificationQueue) Class.forName("net.hearthstats.osx.OsxNotificationQueue").newInstance();
-      } catch (Exception e) {
-        throw new RuntimeException("Could not create OsxNotificationQueue instance due to " + e.getMessage(), e);
-      }
-    } else {
-      return new DialogNotificationQueue();
-    }
+  public Monitor(Environment environment) throws HeadlessException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    this.environment = environment;
+    this.analyzer = new HearthstoneAnalyser(environment);
+    notificationQueue = environment.newNotificationQueue();
   }
 
 
@@ -273,7 +266,7 @@ public class Monitor extends JFrame implements Observer {
   private void showWelcomeLog() {
     debugLog.debug("Showing welcome log messages");
 
-    Log.welcome("HearthStats.net " + t("Uploader") + " v" + ConfigDeprecated.getVersionWithOs());
+    Log.welcome("HearthStats.net " + t("Uploader") + " v" + Application.version() + "-" + environment.os());
 
     Log.help(t("welcome_1_set_decks"));
     if (ConfigDeprecated.os == ConfigDeprecated.OS.OSX) {
@@ -446,7 +439,7 @@ public class Monitor extends JFrame implements Observer {
     text.setEditable(false);
     text.setBackground(Color.WHITE);
     text.setText("<html><body style=\"font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:10px;\">" +
-        "<h2 style=\"font-weight:normal\"><a href=\"http://hearthstats.net\">HearthStats.net</a> " + t("Uploader") + " v" + ConfigDeprecated.getVersion() + "</h2>" +
+        "<h2 style=\"font-weight:normal\"><a href=\"http://hearthstats.net\">HearthStats.net</a> " + t("Uploader") + " v" + Application.version() + "</h2>" +
         "<p><strong>" + t("Author") + ":</strong> <ul>" +
         "<li> Jerome Dane (<a href=\"https://plus.google.com/+JeromeDane\">Google+</a>, <a href=\"http://twitter.com/JeromeDane\">Twitter</a>) </li> " +
         "<li> Charles Gutjahr (<a href=\"http://charlesgutjahr.com\">Website</a>) </li>" +
@@ -929,7 +922,7 @@ public class Monitor extends JFrame implements Observer {
         if (availableVersion != null) {
           Log.info(t("latest_v_available") + " " + availableVersion);
 
-          if (!availableVersion.matches(ConfigDeprecated.getVersion())) {
+          if (!availableVersion.matches(Application.version())) {
 
             bringWindowToFront();
 
@@ -1533,7 +1526,7 @@ public class Monitor extends JFrame implements Observer {
     if (notificationsFormat != null) {
       // This control only appears on OS X machines, will be null on Windows machines
       ConfigDeprecated.setUseOsxNotifications(notificationsFormat.getSelectedIndex() == 0);
-      notificationQueue = newNotificationQueue();
+      notificationQueue = environment.newNotificationQueue();
     }
 
     setupLogMonitoring();

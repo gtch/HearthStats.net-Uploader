@@ -5,7 +5,6 @@ import java.text.MessageFormat
 import java.util.Observable
 import java.util.ResourceBundle
 import net.hearthstats.BackgroundImageSave
-import net.hearthstats.ConfigDeprecated
 import net.hearthstats.HearthstoneMatch
 import net.hearthstats.Main
 import net.hearthstats.log.Log
@@ -19,15 +18,14 @@ import net.hearthstats.state.Screen
 import net.hearthstats.state.ScreenGroup
 import net.hearthstats.state.ScreenGroup._
 import net.hearthstats.state.UniquePixel
-import net.hearthstats.util.Coordinate
 import net.hearthstats.util.MatchOutcome
 import net.hearthstats.util.Rank
 import org.apache.commons.lang3.StringUtils
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import HearthstoneAnalyser._
-//remove if not needed
-import scala.collection.JavaConversions._
+import net.hearthstats.config.Environment
+
+
 
 object HearthstoneAnalyser {
 
@@ -49,7 +47,9 @@ object HearthstoneAnalyser {
  *
  * @author gtch
  */
-class HearthstoneAnalyser extends Observable {
+class HearthstoneAnalyser(
+   private val environment: Environment
+ ) extends Observable {
 
   private val bundle = ResourceBundle.getBundle("net.hearthstats.resources.Main")
 
@@ -206,7 +206,7 @@ class HearthstoneAnalyser extends Observable {
           startTimer()
           if ((previousScreen != null && previousScreen.group == ScreenGroup.MATCH_START) &&
             (`match`.opponentClass == null || `match`.userClass == null)) {
-            Log.warn(t("warning.classdetection", ConfigDeprecated.getExtractionFolder))
+            Log.warn(t("warning.classdetection", environment.extractionFolder))
           }
 
         case MATCH_END => //break
