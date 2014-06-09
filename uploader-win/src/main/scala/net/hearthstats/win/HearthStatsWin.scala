@@ -5,7 +5,7 @@ import net.hearthstats.Main
 /**
  * Main object for the Windows application, starts up the HearthStats Uploader.
  */
-object MainWin {
+object HearthStatsWin {
 
   def main(args: Array[String]) {
 
