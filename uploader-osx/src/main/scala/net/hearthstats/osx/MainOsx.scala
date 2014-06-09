@@ -3,9 +3,9 @@ package net.hearthstats.osx
 import net.hearthstats.Main
 
 /**
- * Created by charlie on 9/06/2014.
+ * Main object for the OS X bundle, starts up the HearthStats Uploader.
  */
-class MainOsx {
+object MainOsx {
 
   def main(args: Array[String]) {
 

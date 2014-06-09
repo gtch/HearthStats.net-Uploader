@@ -7,7 +7,7 @@ import Card._
 
 object Card {
   val LEGENDARY = 5
-  private lazy val imageCacheFolder: String = Config.getImageCacheFolder
+  private lazy val imageCacheFolder: String = ConfigDeprecated.getImageCacheFolder
 }
 
 case class Card(

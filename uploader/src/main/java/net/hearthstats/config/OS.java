@@ -1,7 +1,8 @@
 package net.hearthstats.config;
 
 /**
- * Created by charlie on 9/06/2014.
+ * Represents the operating systems supported by the HearthStats Uploader.
  */
 public enum OS {
+  WINDOWS, OSX, UNSUPPORTED;
 }

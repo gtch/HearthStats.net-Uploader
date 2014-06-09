@@ -1,8 +1,11 @@
 package net.hearthstats.config
 
+
 /**
- * Created by charlie on 9/06/2014.
+ * Represents the environment-specific information that varies between OS X and Windows.
  */
-class Environment {
+abstract class Environment {
+
+  def os: OS
 
 }

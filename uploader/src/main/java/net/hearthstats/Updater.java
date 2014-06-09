@@ -1,6 +1,6 @@
 package net.hearthstats;
 
-import net.hearthstats.Config.OS;
+import net.hearthstats.ConfigDeprecated.OS;
 import net.hearthstats.notification.DialogNotificationQueue;
 import net.hearthstats.notification.NotificationQueue;
 
@@ -46,7 +46,7 @@ public final class Updater {
 
 	private static void doUpdate() {
 
-		if (Config.analyticsEnabled()) {
+		if (ConfigDeprecated.analyticsEnabled()) {
 			_analytics = AnalyticsTracker.tracker();
 			_analytics.trackEvent("update","UpdateStart");
 		}
@@ -74,7 +74,7 @@ public final class Updater {
 	public static void cleanUp() {
 		_removeFile("updater.jar");
 		_removeFile("HearthStatsUploader.jar");	// remove old jar since we're using an exe now
-		_removeFile(Config.getExtractionFolder() + "/update.zip");
+		_removeFile(ConfigDeprecated.getExtractionFolder() + "/update.zip");
 	}
 
 	private static void _removeFile(String path) {
@@ -88,12 +88,12 @@ public final class Updater {
 		System.out.println("trying to run updater");
 		_notify("Performing Update", "Extracting and running updater ...");
 		try {
-			if (Config.os == Config.OS.WINDOWS) {
+			if (ConfigDeprecated.os == ConfigDeprecated.OS.WINDOWS) {
 				doUpdate();
-			} else if (Config.os == Config.OS.OSX) {
+			} else if (ConfigDeprecated.os == ConfigDeprecated.OS.OSX) {
 				// The Java library path is
 				// /<folder>/HearthStats.app/Contents/MacOS
-				File javaLibraryPath = new File(Config.getJavaLibraryPath());
+				File javaLibraryPath = new File(ConfigDeprecated.getJavaLibraryPath());
 				// The bundle path is the folder where the bundle is stored, ie
 				// /<folder> (not including the HearthStats.app folder)
 				File bundlePath = javaLibraryPath.getParentFile()
@@ -118,19 +118,19 @@ public final class Updater {
 
 
 	public static void _saveSettings() {
-		_savedUserKey = Config.getUserKey();
+		_savedUserKey = ConfigDeprecated.getUserKey();
 	}
 	private static void _restoreSettings() {
-		Config.rebuild();
-		Config.setUserKey(_savedUserKey);
+		ConfigDeprecated.rebuild();
+		ConfigDeprecated.setUserKey(_savedUserKey);
 	}
 
 	private static void _extractZip() {
 
-        File updateZip = new File(Config.getExtractionFolder() + "/update.zip");
+        File updateZip = new File(ConfigDeprecated.getExtractionFolder() + "/update.zip");
 
         if (updateZip.isFile()) {
-            switch (Config.os) {
+            switch (ConfigDeprecated.os) {
                 case WINDOWS:
                     _unZipIt(updateZip.getPath(), "./");
                     break;
@@ -207,7 +207,7 @@ public final class Updater {
 
 	public static void _runMain() {
 		try {
-			switch(Config.os) {
+			switch(ConfigDeprecated.os) {
 				case WINDOWS:
                     JOptionPane.showMessageDialog(null, "Update complete. Attempting to restart ...");
                     _notify("Restarting ...");
@@ -228,7 +228,7 @@ public final class Updater {
 	private static void _downloadUpdate() throws IOException {
 		URL website;
 		String zipUrl = null;
-		switch(Config.os) {
+		switch(ConfigDeprecated.os) {
 			case WINDOWS:
 				 zipUrl = RELEASE_URL + getAvailableVersion() + "/HearthStats.net.Uploader.v" + getAvailableVersion() + ".zip";
 				 break;
@@ -238,7 +238,7 @@ public final class Updater {
 		}
 		website = new URL(zipUrl);
 		ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-		FileOutputStream fos = new FileOutputStream(Config.getExtractionFolder() + "/update.zip");
+		FileOutputStream fos = new FileOutputStream(ConfigDeprecated.getExtractionFolder() + "/update.zip");
 		fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 		fos.close();
 	}
@@ -263,7 +263,7 @@ public final class Updater {
 	public static String getAvailableVersion() {
 		if (_availableVersion == null) {
 			String url = SRC_URL + "version";
-			if(Config.os.toString().equals("OSX"))
+			if(ConfigDeprecated.os.toString().equals("OSX"))
 				url += "-osx";
 			_availableVersion = _readRemoteFile(url);
 		}
@@ -273,7 +273,7 @@ public final class Updater {
 	public static String getRecentChanges() {
 		if (_recentChanges == null) {
 			String url = SRC_URL + "recentchanges";
-			if(Config.os == OS.OSX)
+			if(ConfigDeprecated.os == OS.OSX)
 				url += "-osx";
 			_recentChanges = _readRemoteFile(url);
 		}

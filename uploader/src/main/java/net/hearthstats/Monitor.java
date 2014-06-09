@@ -105,7 +105,7 @@ public class Monitor extends JFrame implements Observer {
 
     protected API _api = new API();
 	protected HearthstoneAnalyser _analyzer = new HearthstoneAnalyser();
-	protected ProgramHelper _hsHelper = Config.programHelper();
+	protected ProgramHelper _hsHelper = ConfigDeprecated.programHelper();
     protected HearthstoneLogMonitor hearthstoneLogMonitor;
 
 	private HyperlinkListener _hyperLinkListener = HyperLinkHandler.getInstance();
@@ -177,7 +177,7 @@ public class Monitor extends JFrame implements Observer {
 
 
     public void start() throws IOException {
-		if (Config.analyticsEnabled()) {
+		if (ConfigDeprecated.analyticsEnabled()) {
             debugLog.debug("Enabling analytics");
 			_analytics = AnalyticsTracker.tracker();
 			_analytics.trackEvent("app","AppStart");
@@ -204,7 +204,7 @@ public class Monitor extends JFrame implements Observer {
 			System.exit(1);
 		}
 
-        if (Config.os == Config.OS.OSX) {
+        if (ConfigDeprecated.os == ConfigDeprecated.OS.OSX) {
             Log.info(t("waiting_for_hs"));
         } else {
             Log.info(t("waiting_for_hs_windowed"));
@@ -213,13 +213,13 @@ public class Monitor extends JFrame implements Observer {
 
 	public void handleClose() {
 		Point p = getLocationOnScreen();
-		Config.setX(p.x);
-		Config.setY(p.y);
+		ConfigDeprecated.setX(p.x);
+		ConfigDeprecated.setY(p.y);
 		Dimension rect = getSize();
-		Config.setWidth((int) rect.getWidth());
-		Config.setHeight((int) rect.getHeight());
+		ConfigDeprecated.setWidth((int) rect.getWidth());
+		ConfigDeprecated.setHeight((int) rect.getHeight());
 		try {
-			Config.save();
+			ConfigDeprecated.save();
 		} catch (Throwable t) {
 			Log.warn(
 					"Error occurred trying to write settings file, your settings may not be saved",
@@ -231,10 +231,10 @@ public class Monitor extends JFrame implements Observer {
 	private void showWelcomeLog() {
         debugLog.debug("Showing welcome log messages");
 
-        Log.welcome("HearthStats.net " + t("Uploader") + " v" + Config.getVersionWithOs());
+        Log.welcome("HearthStats.net " + t("Uploader") + " v" + ConfigDeprecated.getVersionWithOs());
 
         Log.help(t("welcome_1_set_decks"));
-        if (Config.os == Config.OS.OSX) {
+        if (ConfigDeprecated.os == ConfigDeprecated.OS.OSX) {
             Log.help(t("welcome_2_run_hearthstone"));
             Log.help(t("welcome_3_notifications"));
         } else {
@@ -252,7 +252,7 @@ public class Monitor extends JFrame implements Observer {
 
 	
 	private boolean _checkForUserKey() {
-		boolean userKeySet = !Config.getUserKey().equals("your_userkey_here");
+		boolean userKeySet = !ConfigDeprecated.getUserKey().equals("your_userkey_here");
 		if(userKeySet) {
 			return true;
 		} else {
@@ -277,10 +277,10 @@ public class Monitor extends JFrame implements Observer {
 			if (StringUtils.isEmpty(userkey)) {
 				return false;
 			} else {
-				Config.setUserKey(userkey);
+				ConfigDeprecated.setUserKey(userkey);
 				try {
 					_userKeyField.setText(userkey);
-					Config.save();
+					ConfigDeprecated.save();
 					Log.info(t("UserkeyStored"));
 				} catch (Throwable e) {
 					Log.warn(
@@ -350,8 +350,8 @@ public class Monitor extends JFrame implements Observer {
 
 		Image icon = new ImageIcon(getClass().getResource("/images/icon.png")).getImage();
 		setIconImage(icon);
-		setLocation(Config.getX(), Config.getY());
-		setSize(Config.getWidth(), Config.getHeight());
+		setLocation(ConfigDeprecated.getX(), ConfigDeprecated.getY());
+		setSize(ConfigDeprecated.getWidth(), ConfigDeprecated.getHeight());
 		
 		_tabbedPane = new JTabbedPane();
 		add(_tabbedPane);
@@ -385,7 +385,7 @@ public class Monitor extends JFrame implements Observer {
 		setMinimumSize(new Dimension(500, 600));
 		setVisible(true);
 		
-		if(Config.startMinimized())
+		if(ConfigDeprecated.startMinimized())
 			setState(JFrame.ICONIFIED);
 		
 		_updateTitle();
@@ -404,7 +404,7 @@ public class Monitor extends JFrame implements Observer {
 		text.setEditable(false);
 		text.setBackground(Color.WHITE);
 		text.setText("<html><body style=\"font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; font-size:10px;\">" +
-				"<h2 style=\"font-weight:normal\"><a href=\"http://hearthstats.net\">HearthStats.net</a> " + t("Uploader") + " v" + Config.getVersion() + "</h2>" +
+				"<h2 style=\"font-weight:normal\"><a href=\"http://hearthstats.net\">HearthStats.net</a> " + t("Uploader") + " v" + ConfigDeprecated.getVersion() + "</h2>" +
 				"<p><strong>" + t("Author") + ":</strong> <ul>" +
                         "<li> Jerome Dane (<a href=\"https://plus.google.com/+JeromeDane\">Google+</a>, <a href=\"http://twitter.com/JeromeDane\">Twitter</a>) </li> " +
                         "<li> Charles Gutjahr (<a href=\"http://charlesgutjahr.com\">Website</a>) </li>" +
@@ -508,7 +508,7 @@ public class Monitor extends JFrame implements Observer {
 		// coin
 		panel.add(new JLabel(t("match.label.coin") + " "), "skip,right");
 		_currentGameCoinField = new JCheckBox(t("match.coin"));
-		_currentGameCoinField.setSelected(Config.showHsClosedNotification());
+		_currentGameCoinField.setSelected(ConfigDeprecated.showHsClosedNotification());
 		_currentGameCoinField.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				_analyzer.getMatch().coin_$eq(
@@ -657,13 +657,13 @@ public class Monitor extends JFrame implements Observer {
 		// user key
 		panel.add(new JLabel(t("options.label.userkey") + " "), "skip,right");
 		_userKeyField = new JTextField();
-		_userKeyField.setText(Config.getUserKey());
+		_userKeyField.setText(ConfigDeprecated.getUserKey());
 		panel.add(_userKeyField, "wrap");
 
         // monitoring method
         panel.add(new JLabel(t("options.label.monitoring")), "skip,right");
         monitoringMethodField = new JComboBox<>(new String[]{ t("options.label.monitoring.screen"), t("options.label.monitoring.log")});
-        monitoringMethodField.setSelectedIndex(Config.monitoringMethod().ordinal());
+        monitoringMethodField.setSelectedIndex(ConfigDeprecated.monitoringMethod().ordinal());
         panel.add(monitoringMethodField, "");
 
         HelpIcon monitoringHelpIcon = new HelpIcon("https://github.com/HearthStats/HearthStats.net-Uploader/wiki/Options:-Monitoring", "Help on monitoring options");
@@ -673,13 +673,13 @@ public class Monitor extends JFrame implements Observer {
         // check for updates
 		panel.add(new JLabel(t("options.label.updates") + " "), "skip,right");
 		_checkUpdatesField = new JCheckBox(t("options.check_updates"));
-		_checkUpdatesField.setSelected(Config.checkForUpdates());
+		_checkUpdatesField.setSelected(ConfigDeprecated.checkForUpdates());
 		panel.add(_checkUpdatesField, "wrap");
 		
 		// show notifications
 		panel.add(new JLabel(t("options.label.notifications") + " "), "skip,right");
 		_notificationsEnabledField = new JCheckBox("Show notifications");
-		_notificationsEnabledField.setSelected(Config.showNotifications());
+		_notificationsEnabledField.setSelected(ConfigDeprecated.showNotifications());
 		_notificationsEnabledField.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -690,12 +690,12 @@ public class Monitor extends JFrame implements Observer {
 
 
         // When running on Mac OS X 10.8 or later, the format of the notifications can be changed
-        if (Config.isOsxNotificationsSupported()) {
+        if (ConfigDeprecated.isOsxNotificationsSupported()) {
             panel.add(new JLabel(""), "skip,right");
             JLabel notificationsFormatLabel = new JLabel(t("options.label.notifyformat.label"));
             panel.add(notificationsFormatLabel, "split 2, gapleft 27");
             _notificationsFormat = new JComboBox<>(new String[]{ t("options.label.notifyformat.osx"), t("options.label.notifyformat.hearthstats")});
-            _notificationsFormat.setSelectedIndex(Config.useOsxNotifications() ? 0 : 1);
+            _notificationsFormat.setSelectedIndex(ConfigDeprecated.useOsxNotifications() ? 0 : 1);
             panel.add(_notificationsFormat, "");
 
             HelpIcon osxNotificationsHelpIcon = new HelpIcon("https://github.com/HearthStats/HearthStats.net-Uploader/wiki/Options:-OS-X-Notifications", "Help on notification style options");
@@ -705,37 +705,37 @@ public class Monitor extends JFrame implements Observer {
 		// show HS found notification
 		panel.add(new JLabel(""), "skip,right");
 		_showHsFoundField = new JCheckBox(t("options.notification.hs_found"));
-		_showHsFoundField.setSelected(Config.showHsFoundNotification());
+		_showHsFoundField.setSelected(ConfigDeprecated.showHsFoundNotification());
 		panel.add(_showHsFoundField, "wrap");
 		
 		// show HS closed notification
 		panel.add(new JLabel(""), "skip,right");
 		_showHsClosedField = new JCheckBox(t("options.notification.hs_closed"));
-		_showHsClosedField.setSelected(Config.showHsClosedNotification());
+		_showHsClosedField.setSelected(ConfigDeprecated.showHsClosedNotification());
 		panel.add(_showHsClosedField, "wrap");
 		
 		// show game screen notification
 		panel.add(new JLabel(""), "skip,right");
 		_showScreenNotificationField = new JCheckBox(t("options.notification.screen"));
-		_showScreenNotificationField.setSelected(Config.showScreenNotification());
+		_showScreenNotificationField.setSelected(ConfigDeprecated.showScreenNotification());
 		panel.add(_showScreenNotificationField, "wrap");
 		
 		// show game mode notification
 		panel.add(new JLabel(""), "skip,right");
 		_showModeNotificationField = new JCheckBox(t("options.notification.mode"));
-		_showModeNotificationField.setSelected(Config.showModeNotification());
+		_showModeNotificationField.setSelected(ConfigDeprecated.showModeNotification());
 		panel.add(_showModeNotificationField, "wrap");
 		
 		// show deck notification
 		panel.add(new JLabel(""), "skip,right");
 		_showDeckNotificationField = new JCheckBox(t("options.notification.deck"));
-		_showDeckNotificationField.setSelected(Config.showDeckNotification());
+		_showDeckNotificationField.setSelected(ConfigDeprecated.showDeckNotification());
 		panel.add(_showDeckNotificationField, "wrap");
 		
 		// show your turn notification
 		panel.add(new JLabel(""), "skip,right");
 		_showYourTurnNotificationField = new JCheckBox(t("options.notification.turn"));
-		_showYourTurnNotificationField.setSelected(Config.showYourTurnNotification());
+		_showYourTurnNotificationField.setSelected(ConfigDeprecated.showYourTurnNotification());
 		panel.add(_showYourTurnNotificationField, "wrap");
 		
 		_updateNotificationCheckboxes();
@@ -743,7 +743,7 @@ public class Monitor extends JFrame implements Observer {
 		// show deck overlay
 		panel.add(new JLabel(""), "skip,right");
 		_showDeckOverlay = new JCheckBox(t("options.ui.deckOverlay"));
-		_showDeckOverlay.setSelected(Config.showDeckOverlay());
+		_showDeckOverlay.setSelected(ConfigDeprecated.showDeckOverlay());
 		panel.add(_showDeckOverlay, "");
 
         HelpIcon deckOverlayHelpIcon = new HelpIcon("https://github.com/HearthStats/HearthStats.net-Uploader/wiki/Options:-Deck-Overlay", "Help on the show deck overlay option");
@@ -753,7 +753,7 @@ public class Monitor extends JFrame implements Observer {
         panel.add(new JLabel(t("options.label.matchpopup")), "skip,right");
 
         showMatchPopupField = new JComboBox<>(new String[]{ t("options.label.matchpopup.always"), t("options.label.matchpopup.incomplete"), t("options.label.matchpopup.never")});
-        showMatchPopupField.setSelectedIndex(Config.showMatchPopup().ordinal());
+        showMatchPopupField.setSelectedIndex(ConfigDeprecated.showMatchPopup().ordinal());
         panel.add(showMatchPopupField, "");
 
         HelpIcon matchPopupHelpIcon = new HelpIcon("https://github.com/HearthStats/HearthStats.net-Uploader/wiki/Options:-Match-Popup", "Help on the match popup options");
@@ -763,13 +763,13 @@ public class Monitor extends JFrame implements Observer {
         // minimize to tray
 		panel.add(new JLabel("Interface: "), "skip,right");
 		_minToTrayField = new JCheckBox(t("options.notification.min_to_tray"));
-		_minToTrayField.setSelected(Config.checkForUpdates());
+		_minToTrayField.setSelected(ConfigDeprecated.checkForUpdates());
 		panel.add(_minToTrayField, "wrap");
 		
 		// start minimized
 		panel.add(new JLabel(""), "skip,right");
 		_startMinimizedField = new JCheckBox(t("options.notification.start_min"));
-		_startMinimizedField.setSelected(Config.startMinimized());
+		_startMinimizedField.setSelected(ConfigDeprecated.startMinimized());
 		panel.add(_startMinimizedField, "wrap");
 
 		// analytics
@@ -796,7 +796,7 @@ public class Monitor extends JFrame implements Observer {
 				}
 			}
 		});
-		_analyticsField.setSelected(Config.analyticsEnabled());
+		_analyticsField.setSelected(ConfigDeprecated.analyticsEnabled());
 		panel.add(_analyticsField, "wrap");
 		
 		// Save button
@@ -875,14 +875,14 @@ public class Monitor extends JFrame implements Observer {
 
 
 	private void checkForUpdates() {
-		if(Config.checkForUpdates()) {
+		if(ConfigDeprecated.checkForUpdates()) {
             Log.info(t("checking_for_updates..."));
 			try {
 				String availableVersion = Updater.getAvailableVersion();
 				if (availableVersion != null) {
                     Log.info(t("latest_v_available") + " " + availableVersion);
 					
-					if (!availableVersion.matches(Config.getVersion())) {
+					if (!availableVersion.matches(ConfigDeprecated.getVersion())) {
 
                         bringWindowToFront();
 
@@ -914,7 +914,7 @@ public class Monitor extends JFrame implements Observer {
 								JLabel lbl = new JLabel(t("reenable_updates_any_time"));
 								panel.add(lbl);
 								JOptionPane.showOptionDialog(this, panel, t("updates_disabled_msg"), JOptionPane.NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options , options[0]);
-								Config.setCheckForUpdates(false);
+								ConfigDeprecated.setCheckForUpdates(false);
 							}
 						}
 					}
@@ -933,7 +933,7 @@ public class Monitor extends JFrame implements Observer {
      * Sets up the Hearthstone log monitoring if enabled, or stops if it is disabled
      */
     private void setupLogMonitoring() {
-        setMonitorHearthstoneLog(Config.monitoringMethod() == Config.MonitoringMethod.SCREEN_LOG);
+        setMonitorHearthstoneLog(ConfigDeprecated.monitoringMethod() == ConfigDeprecated.MonitoringMethod.SCREEN_LOG);
     }
 
 
@@ -959,7 +959,7 @@ public class Monitor extends JFrame implements Observer {
 	}
 
 	protected void _notify(String header, String message) {
-		if (Config.showNotifications())
+		if (ConfigDeprecated.showNotifications())
 			_notificationQueue.add(header, message, false);
 	}
 
@@ -1059,7 +1059,7 @@ public class Monitor extends JFrame implements Observer {
 		_notify(header, message);
         Log.matchResult(header + ": " + message);
 
-		if(Config.analyticsEnabled()) {
+		if(ConfigDeprecated.analyticsEnabled()) {
 			_analytics.trackEvent("app", "Submit" + hsMatch.mode() + "Match");
 		}
 		
@@ -1087,7 +1087,7 @@ public class Monitor extends JFrame implements Observer {
 		if (!_hearthstoneDetected) {
 			_hearthstoneDetected = true;
 			debugLog.debug("  - hearthstoneDetected");
-            if (Config.showHsFoundNotification()) {
+            if (ConfigDeprecated.showHsFoundNotification()) {
 				_notify("Hearthstone found");
             }
             if (hearthstoneLogMonitor == null) {
@@ -1109,7 +1109,7 @@ public class Monitor extends JFrame implements Observer {
 				_analyzer.analyze(image);
             }
 			
-			if (Config.mirrorGameImage()) {
+			if (ConfigDeprecated.mirrorGameImage()) {
 				debugLog.debug("  - mirroring image");
 				_updateImageFrame();
             }
@@ -1122,7 +1122,7 @@ public class Monitor extends JFrame implements Observer {
 		if (_hearthstoneDetected) {
 			_hearthstoneDetected = false;
 			debugLog.debug("  - changed hearthstoneDetected to false");
-			if (Config.showHsClosedNotification()) {
+			if (ConfigDeprecated.showHsClosedNotification()) {
 				_notify("Hearthstone closed");
 				_analyzer.reset();
 			}
@@ -1170,7 +1170,7 @@ public class Monitor extends JFrame implements Observer {
 
         _updateMatchClassSelectorsIfSet(match);
 
-        final Config.MatchPopup matchPopup = Config.showMatchPopup();
+        final ConfigDeprecated.MatchPopup matchPopup = ConfigDeprecated.showMatchPopup();
         final boolean showPopup;
 
         switch (matchPopup) {
@@ -1184,7 +1184,7 @@ public class Monitor extends JFrame implements Observer {
                 showPopup = false;
                 break;
             default:
-                throw new UnsupportedOperationException("Unknown config option " + Config.showMatchPopup());
+                throw new UnsupportedOperationException("Unknown config option " + ConfigDeprecated.showMatchPopup());
         }
 
         if (showPopup) {
@@ -1198,7 +1198,7 @@ public class Monitor extends JFrame implements Observer {
                        String infoMessage = null;
                        do {
                            if (infoMessage == null) {
-                               infoMessage = (matchPopup == Config.MatchPopup.INCOMPLETE)
+                               infoMessage = (matchPopup == ConfigDeprecated.MatchPopup.INCOMPLETE)
                                        ? t("match.popup.message.incomplete")
                                        : t("match.popup.message.always");
                            }
@@ -1264,7 +1264,7 @@ public class Monitor extends JFrame implements Observer {
 			case MODE:
 				_playingInMatch = false;
 				_setCurrentMatchEnabledi(false);
-				if (Config.showModeNotification()) {
+				if (ConfigDeprecated.showModeNotification()) {
                     debugLog.debug(_analyzer.getMode() + " level " + _analyzer.getRankLevel());
 					if ("Ranked".equals(_analyzer.getMode())) {
                         _notify(_analyzer.getMode() + " Mode Detected", "Rank Level " + _analyzer.getRankLevel());
@@ -1322,7 +1322,7 @@ public class Monitor extends JFrame implements Observer {
                     setupLogMonitoring();
 					_resetMatchClassSelectors();
 					//TODO : also display the overlay for Practice mode (usefull for tests)
-                    if (Config.showDeckOverlay() && !"Arena".equals(_analyzer.getMode())) {
+                    if (ConfigDeprecated.showDeckOverlay() && !"Arena".equals(_analyzer.getMode())) {
                         Deck selectedDeck = DeckUtils.getDeckFromSlot(_analyzer.getDeckSlot());
 					if (selectedDeck != null && selectedDeck.isValid()
 							&& hearthstoneLogMonitor != null) {
@@ -1349,7 +1349,7 @@ public class Monitor extends JFrame implements Observer {
 				}
 
                 if (_analyzer.getScreen().group != ScreenGroup.MATCH_END && !DO_NOT_NOTIFY_SCREENS.contains(_analyzer.getScreen())
-                        && Config.showScreenNotification()) {
+                        && ConfigDeprecated.showScreenNotification()) {
 					if (_analyzer.getScreen() == Screen.PRACTICE_LOBBY) {
                         _notify(_analyzer.getScreen().title + " Screen Detected", "Results are not tracked in practice mode");
                     } else {
@@ -1373,7 +1373,7 @@ public class Monitor extends JFrame implements Observer {
 				break;
 
 			case YOUR_TURN:
-				if (Config.showYourTurnNotification()) {
+				if (ConfigDeprecated.showYourTurnNotification()) {
                     _notify((_analyzer.isYourTurn() ? "Your" : "Opponent") + " turn detected");
                 }
                 Log.info((_analyzer.isYourTurn() ? "Your" : "Opponent") + " turn detected");
@@ -1480,34 +1480,34 @@ public class Monitor extends JFrame implements Observer {
 	private void _saveOptions() {
         debugLog.debug("Saving options...");
 
-        Config.MonitoringMethod monitoringMethod = Config.MonitoringMethod.values()[monitoringMethodField.getSelectedIndex()];
+        ConfigDeprecated.MonitoringMethod monitoringMethod = ConfigDeprecated.MonitoringMethod.values()[monitoringMethodField.getSelectedIndex()];
 
-		Config.setUserKey(_userKeyField.getText());
-        Config.setMonitoringMethod(monitoringMethod);
-		Config.setCheckForUpdates(_checkUpdatesField.isSelected());
-		Config.setShowNotifications(_notificationsEnabledField.isSelected());
-		Config.setShowHsFoundNotification(_showHsFoundField.isSelected());
-		Config.setShowHsClosedNotification(_showHsClosedField.isSelected());
-		Config.setShowScreenNotification(_showScreenNotificationField.isSelected());
-		Config.setShowModeNotification(_showModeNotificationField.isSelected());
-		Config.setShowDeckNotification(_showDeckNotificationField.isSelected());
-		Config.setShowYourTurnNotification(_showYourTurnNotificationField.isSelected());
-		Config.setShowDeckOverlay(_showDeckOverlay.isSelected());
-        Config.setShowMatchPopup(Config.MatchPopup.values()[showMatchPopupField.getSelectedIndex()]);
-		Config.setAnalyticsEnabled(_analyticsField.isSelected());
-		Config.setMinToTray(_minToTrayField.isSelected());
-		Config.setStartMinimized(_startMinimizedField.isSelected());
+		ConfigDeprecated.setUserKey(_userKeyField.getText());
+        ConfigDeprecated.setMonitoringMethod(monitoringMethod);
+		ConfigDeprecated.setCheckForUpdates(_checkUpdatesField.isSelected());
+		ConfigDeprecated.setShowNotifications(_notificationsEnabledField.isSelected());
+		ConfigDeprecated.setShowHsFoundNotification(_showHsFoundField.isSelected());
+		ConfigDeprecated.setShowHsClosedNotification(_showHsClosedField.isSelected());
+		ConfigDeprecated.setShowScreenNotification(_showScreenNotificationField.isSelected());
+		ConfigDeprecated.setShowModeNotification(_showModeNotificationField.isSelected());
+		ConfigDeprecated.setShowDeckNotification(_showDeckNotificationField.isSelected());
+		ConfigDeprecated.setShowYourTurnNotification(_showYourTurnNotificationField.isSelected());
+		ConfigDeprecated.setShowDeckOverlay(_showDeckOverlay.isSelected());
+        ConfigDeprecated.setShowMatchPopup(ConfigDeprecated.MatchPopup.values()[showMatchPopupField.getSelectedIndex()]);
+		ConfigDeprecated.setAnalyticsEnabled(_analyticsField.isSelected());
+		ConfigDeprecated.setMinToTray(_minToTrayField.isSelected());
+		ConfigDeprecated.setStartMinimized(_startMinimizedField.isSelected());
 
         if (_notificationsFormat != null) {
             // This control only appears on OS X machines, will be null on Windows machines
-            Config.setUseOsxNotifications(_notificationsFormat.getSelectedIndex() == 0);
+            ConfigDeprecated.setUseOsxNotifications(_notificationsFormat.getSelectedIndex() == 0);
             _notificationQueue = newNotificationQueue();
         }
 
         setupLogMonitoring();
 
         try {
-            Config.save();
+            ConfigDeprecated.save();
             debugLog.debug("...save complete");
             JOptionPane.showMessageDialog(this, "Options Saved");
         } catch (Throwable e) {
@@ -1575,7 +1575,7 @@ public class Monitor extends JFrame implements Observer {
         }
         addWindowStateListener(new WindowStateListener() {
             public void windowStateChanged(WindowEvent e) {
-                if (Config.minimizeToTray()) {
+                if (ConfigDeprecated.minimizeToTray()) {
                     if (e.getNewState() == ICONIFIED) {
                         try {
                             tray.add(trayIcon);
@@ -1632,7 +1632,7 @@ public class Monitor extends JFrame implements Observer {
 
 
     private static NotificationQueue newNotificationQueue() {
-        if (Config.useOsxNotifications()) {
+        if (ConfigDeprecated.useOsxNotifications()) {
             try {
                 return (NotificationQueue) Class.forName("net.hearthstats.osx.OsxNotificationQueue").newInstance();
             } catch (Exception e) {

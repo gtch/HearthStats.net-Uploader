@@ -14,7 +14,7 @@ import com.sun.jna.platform.win32.WinGDI.BITMAPINFO;
 import com.sun.jna.platform.win32.WinNT.HANDLE;
 import com.sun.jna.platform.win32.WinUser.WNDENUMPROC;
 import com.sun.jna.ptr.PointerByReference;
-import net.hearthstats.Config;
+import net.hearthstats.ConfigDeprecated;
 import net.hearthstats.ProgramHelper;
 import net.hearthstats.win.jna.extra.GDI32Extra;
 import net.hearthstats.win.jna.extra.User32Extra;
@@ -101,7 +101,7 @@ public class ProgramHelperWindows extends ProgramHelper {
                 if(Native.toString(buffer).equals(_processName) && classNameStr.equals("UnityWndClass")) {
                     // Find the location the HearthStats executable, used later to find the log file
                     // Only compatible with Windows Vista and later, skip for Windows XP
-                    if (Config.isOsVersionAtLeast(6, 0)) {
+                    if (ConfigDeprecated.isOsVersionAtLeast(6, 0)) {
                         debugLog.debug("Windows version is Vista or later so the location of the Hearthstone is being determined from the process");
                         char[] processFileName = new char[MAX_TITLE_LENGTH * 2];
                         int[] lpdwSize = new int[]{MAX_TITLE_LENGTH};

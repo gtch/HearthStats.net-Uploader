@@ -1,5 +1,6 @@
 package net.hearthstats;
 
+import net.hearthstats.config.Environment;
 import net.hearthstats.log.Log;
 import net.hearthstats.log.LogPane;
 import net.hearthstats.notification.DialogNotification;
@@ -10,12 +11,9 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 public final class Main {
-  private Main() {
-  } // never instanciated
+  private Main() {} // never instantiated
 
 
   private static Logger debugLog = LoggerFactory.getLogger(Main.class);
@@ -53,12 +51,7 @@ public final class Main {
   }
 
 
-  protected static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(5);
-
-  protected static JFrame f = new JFrame();
-
-
-  public static void main(String[] args) {
+  public static void start(Environment environment) {
 
     try {
 
@@ -66,7 +59,7 @@ public final class Main {
       loadingNotification.show();
 
       Updater.cleanUp();
-      Config.rebuild();
+      ConfigDeprecated.rebuild();
 
       logSystemInformation();
 
@@ -75,7 +68,7 @@ public final class Main {
       setupTesseract();
 
       try {
-        switch (Config.os) {
+        switch (environment.os()) {
           case WINDOWS:
             loadJarDll("liblept168");
             loadJarDll("libtesseract302");
@@ -112,7 +105,7 @@ public final class Main {
     if (e instanceof UnsatisfiedLinkError) {
       // A library that Tesseract or Leptonica expects to find on this system isn't there
       title = "Expected libraries are not installed";
-      if (Config.os == Config.OS.WINDOWS && "amd64".equals(Config.getSystemProperty("os.arch"))) {
+      if (ConfigDeprecated.os == ConfigDeprecated.OS.WINDOWS && "amd64".equals(ConfigDeprecated.getSystemProperty("os.arch"))) {
         // This is the most common scenario - the user is using 64-bit Windows and there is no 64-bit library installed by default
         message = new Object[]{
           new JLabel("The HearthStats Uploader requires the Visual C++ Redistributable to be installed."),
@@ -120,7 +113,7 @@ public final class Main {
           HyperLinkHandler.getUrlLabel("http://www.microsoft.com/en-US/download/details.aspx?id=30679"),
           new JLabel("and install it before using the HearthStats Uploader.")
         };
-      } else if (Config.os == Config.OS.WINDOWS) {
+      } else if (ConfigDeprecated.os == ConfigDeprecated.OS.WINDOWS) {
         // There is no known problem with other variants of Windows, but just in case this does occur we show a similar message
         message = new Object[]{
           new JLabel("The HearthStats Uploader requires the Visual C++ Redistributable to be installed."),
@@ -153,14 +146,14 @@ public final class Main {
   private static void logSystemInformation() {
     if (debugLog.isInfoEnabled()) {
       debugLog.info("**********************************************************************");
-      debugLog.info("  Starting HearthStats.net Uploader {} on {}", Config.getVersion(), Config.os);
-      debugLog.info("  os.name={}", Config.getSystemProperty("os.name"));
-      debugLog.info("  os.version={}", Config.getSystemProperty("os.version"));
-      debugLog.info("  os.arch={}", Config.getSystemProperty("os.arch"));
-      debugLog.info("  java.runtime.version={}", Config.getSystemProperty("java.runtime.version"));
-      debugLog.info("  java.class.path={}", Config.getSystemProperty("java.class.path"));
-      debugLog.info("  java.library.path={}", Config.getSystemProperty("java.library.path"));
-      debugLog.info("  user.language={}", Config.getSystemProperty("user.language"));
+      debugLog.info("  Starting HearthStats.net Uploader {} on {}", ConfigDeprecated.getVersion(), ConfigDeprecated.os);
+      debugLog.info("  os.name={}", ConfigDeprecated.getSystemProperty("os.name"));
+      debugLog.info("  os.version={}", ConfigDeprecated.getSystemProperty("os.version"));
+      debugLog.info("  os.arch={}", ConfigDeprecated.getSystemProperty("os.arch"));
+      debugLog.info("  java.runtime.version={}", ConfigDeprecated.getSystemProperty("java.runtime.version"));
+      debugLog.info("  java.class.path={}", ConfigDeprecated.getSystemProperty("java.class.path"));
+      debugLog.info("  java.library.path={}", ConfigDeprecated.getSystemProperty("java.library.path"));
+      debugLog.info("  user.language={}", ConfigDeprecated.getSystemProperty("user.language"));
       debugLog.info("**********************************************************************");
     }
   }
@@ -168,7 +161,7 @@ public final class Main {
 
   private static void cleanupDebugFiles() {
     try {
-      File folder = new File(Config.getExtractionFolder());
+      File folder = new File(ConfigDeprecated.getExtractionFolder());
       if (folder.exists()) {
         File[] files = folder.listFiles();
         for (File file : files) {
@@ -187,11 +180,11 @@ public final class Main {
   public static void setupTesseract() {
     debugLog.debug("Extracting Tesseract data");
     String outPath;
-    if (Config.os == Config.OS.OSX) {
-      File javaLibraryPath = new File(Config.getJavaLibraryPath());
+    if (ConfigDeprecated.os == ConfigDeprecated.OS.OSX) {
+      File javaLibraryPath = new File(ConfigDeprecated.getJavaLibraryPath());
       outPath = javaLibraryPath.getParentFile().getAbsolutePath() + "/Resources";
     } else {
-      outPath = Config.getExtractionFolder() + "/";
+      outPath = ConfigDeprecated.getExtractionFolder() + "/";
       (new File(outPath + "tessdata/configs")).mkdirs();
       copyFileFromJarTo("/tessdata/eng.traineddata", outPath + "tessdata/eng.traineddata");
       copyFileFromJarTo("/tessdata/configs/api_config", outPath + "tessdata/configs/api_config");
@@ -242,7 +235,7 @@ public final class Main {
       byte[] buffer = new byte[1024];
       int read = -1;
 
-      File outDir = new File(Config.getExtractionFolder());
+      File outDir = new File(ConfigDeprecated.getExtractionFolder());
       outDir.mkdirs();
       String outPath = outDir.getPath() + "/";
 

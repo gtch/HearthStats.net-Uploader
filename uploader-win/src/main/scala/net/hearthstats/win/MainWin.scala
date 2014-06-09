@@ -3,9 +3,9 @@ package net.hearthstats.win
 import net.hearthstats.Main
 
 /**
- * Main class for Windows application, starts up the HearthStats Uploader.
+ * Main object for the Windows application, starts up the HearthStats Uploader.
  */
-class MainWin {
+object MainWin {
 
   def main(args: Array[String]) {
 
