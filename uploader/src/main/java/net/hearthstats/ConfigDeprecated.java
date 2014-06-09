@@ -15,9 +15,10 @@ import org.ini4j.Wini;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Config {
+@Deprecated
+public class ConfigDeprecated {
 
-    private final static Logger debugLog = LoggerFactory.getLogger(Config.class);
+    private final static Logger debugLog = LoggerFactory.getLogger(ConfigDeprecated.class);
 
     public static final OS os = parseOperatingSystem();
 
@@ -269,7 +270,7 @@ public class Config {
 //			if(Config.os.toString().equals("OSX")) {
 //				versionFile += "-osx";
 //			}
-			InputStream in = Config.class.getResourceAsStream(versionFile);
+			InputStream in = ConfigDeprecated.class.getResourceAsStream(versionFile);
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             String strLine;
             try {
@@ -294,7 +295,7 @@ public class Config {
 
     public static Boolean isOsxNotificationsSupported() {
         try {
-            if (Config.os == OS.OSX) {
+            if (ConfigDeprecated.os == OS.OSX) {
                 return isOsVersionAtLeast(10, 8);
             }
         } catch (Exception ex) {
@@ -305,7 +306,7 @@ public class Config {
 
 
     public static boolean isOsVersionAtLeast(int requiredMajor, int requiredMinor) {
-        String osVersion = Config.getSystemProperty("os.version");
+        String osVersion = ConfigDeprecated.getSystemProperty("os.version");
         try {
             String osVersionSplit[] = osVersion.split("\\.");
             int versionMajor = Integer.parseInt(osVersionSplit[0]);
@@ -388,7 +389,7 @@ public class Config {
 	private static void createConfigIniIfNecessary() {
 		File configFile = new File(getConfigPath());
 		if (!configFile.exists()) {
-            if (Config.os == OS.OSX) {
+            if (ConfigDeprecated.os == OS.OSX) {
                 // The location has moved on Macs, so move the old config.ini to the new location if there is one
                 File oldConfigFile = new File("config.ini");
                 if (oldConfigFile.exists()) {
@@ -412,7 +413,7 @@ public class Config {
 	}
 
     private static String getConfigPath() {
-        if (Config.os == OS.OSX) {
+        if (ConfigDeprecated.os == OS.OSX) {
             return getSystemProperty("user.home") + "/Library/Preferences/net.hearthstats.HearthStatsUploader.ini";
         } else {
             return "config.ini";
@@ -566,7 +567,7 @@ public class Config {
 
     /**
      * Parses the os.name system property to determine what operating system we are using.
-     * This method is private because you should use the cached version {@link Config#os)} which is faster.
+     * This method is private because you should use the cached version {@link ConfigDeprecated#os)} which is faster.
      * @return The current OS
      */
     private static OS parseOperatingSystem() {
@@ -599,7 +600,7 @@ public class Config {
 	public static ProgramHelper programHelper() {
 		if (helper == null) {
 			String className;
-			switch (Config.os) {
+			switch (ConfigDeprecated.os) {
 			case WINDOWS:
 				className = "net.hearthstats.win.ProgramHelperWindows";
 				break;

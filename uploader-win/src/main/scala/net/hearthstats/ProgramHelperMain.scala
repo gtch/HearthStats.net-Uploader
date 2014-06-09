@@ -1,4 +1,4 @@
-package net.hearthstone
+package net.hearthstats
 
 import net.hearthstats.Config.OS._
 import net.hearthstats.Config
